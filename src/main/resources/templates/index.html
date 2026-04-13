@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Career Spider 🕷️</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключаем DataTables (для крутой таблицы) -->
+    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; padding-top: 30px; padding-bottom: 50px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border: none; border-radius: 15px; overflow: hidden; }
+        .badge-score { font-size: 0.9em; padding: 6px 10px; }
+        .header-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 0; margin-bottom: 30px; border-radius: 0 0 20px 20px; margin-top: -30px; }
+    </style>
+</head>
+<body>
+
+<div class="header-gradient text-center shadow">
+    <h1 class="display-4 fw-bold">🕷️ Career Spider</h1>
+    <p class="lead opacity-75">Intelligent Job Market Analytics</p>
+</div>
+
+<div class="container">
+    <!-- ПОИСК -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8">
+            <form action="/search" method="get" class="card p-3 shadow-lg">
+                <div class="input-group input-group-lg">
+                    <input type="text" name="query" class="form-control border-0 bg-light"
+                           placeholder="Например: Java Developer" th:value="${query}" required>
+                    <button type="submit" class="btn btn-primary px-5 fw-bold rounded-end">НАЙТИ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- КОНТЕНТ -->
+    <div th:if="${vacancies != null}">
+
+        <!-- КНОПКА СКАЧАТЬ -->
+        <div class="text-end mb-3">
+            <a href="/download" class="btn btn-success btn-lg shadow">
+                📥 Скачать отчет (Excel)
+            </a>
+        </div>
+
+        <!-- КАРТОЧКИ ЗАРПЛАТ -->
+        <div class="row mb-4" th:if="${avgSalary > 0}">
+            <div class="col-md-4">
+                <div class="card text-white bg-warning bg-gradient shadow h-100">
+                    <div class="card-body text-center">
+                        <div class="opacity-50 text-uppercase small fw-bold">Минимум</div>
+                        <h2 class="display-6 fw-bold"><span th:text="${minSalary}">0</span> BYN</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-primary bg-gradient shadow h-100 position-relative overflow-hidden">
+                    <div class="card-body text-center">
+                        <div class="opacity-50 text-uppercase small fw-bold">Средняя по рынку</div>
+                        <h1 class="display-5 fw-bold">~ <span th:text="${avgSalary}">0</span> BYN</h1>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success bg-gradient shadow h-100">
+                    <div class="card-body text-center">
+                        <div class="opacity-50 text-uppercase small fw-bold">Максимум</div>
+                        <h2 class="display-6 fw-bold"><span th:text="${maxSalary}">0</span> BYN</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ГРАФИКИ (2 в ряд) -->
+        <div class="row mb-5">
+            <div class="col-md-6" th:if="${chartLabels != null and !chartLabels.empty}">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-white fw-bold border-0 pt-3">🏢 Топ компаний</div>
+                    <div class="card-body">
+                        <canvas id="companyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6" th:if="${techLabels != null and !techLabels.empty}">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-white fw-bold border-0 pt-3">🛠️ Востребованные технологии</div>
+                    <div class="card-body">
+                        <canvas id="techChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ТАБЛИЦА -->
+        <div class="card shadow">
+            <div class="card-body">
+                <table id="vacanciesTable" class="table table-hover align-middle" style="width:100%">
+                    <thead class="table-light">
+                    <tr>
+                        <th class="text-center">Score</th>
+                        <th>Вакансия</th>
+                        <th>Компания</th>
+                        <th>Зарплата</th>
+                        <th>Действие</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="v : ${vacancies}">
+                        <td class="text-center">
+                            <span th:text="${v.score}"
+                                  th:class="'badge rounded-pill ' + (${v.score >= 0} ? 'bg-success' : 'bg-danger')">
+                            </span>
+                        </td>
+                        <td class="fw-bold" th:text="${v.title}"></td>
+                        <td class="text-muted small" th:text="${v.company}"></td>
+                        <td th:text="${v.salary}" class="text-nowrap text-primary fw-bold"></td>
+                        <td>
+                            <a th:href="${v.url}" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3">Open ↗</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script th:inline="javascript">
+    $(document).ready(function() {
+        // ИСПРАВЛЕНИЕ: Добавили пробелы между скобками [ [ ... ] ], чтобы Thymeleaf не ругался
+        $('#vacanciesTable').DataTable({
+            "language": { "url": "//cdn.datatables.net/plug-ins/1.13.7/i18n/ru.json" },
+            "pageLength": 25,
+            "order": [ [ 0, "desc" ] ]
+        });
+    });
+
+    // Данные для графиков
+    var companyLabels = /*[[${chartLabels}]]*/ [];
+    var companyData = /*[[${chartData}]]*/ [];
+
+    var techLabels = /*[[${techLabels}]]*/ [];
+    var techData = /*[[${techData}]]*/ [];
+
+    // График Компаний (Пончик)
+    if (companyLabels && companyLabels.length > 0) {
+        new Chart(document.getElementById('companyChart'), {
+            type: 'doughnut',
+            data: {
+                labels: companyLabels,
+                datasets: [{
+                    data: companyData,
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                    hoverOffset: 10
+                }]
+            },
+            options: { maintainAspectRatio: false }
+        });
+    }
+
+    // График Технологий (Столбики)
+    if (techLabels && techLabels.length > 0) {
+        new Chart(document.getElementById('techChart'), {
+            type: 'bar',
+            data: {
+                labels: techLabels,
+                datasets: [{
+                    label: 'Частота упоминания',
+                    data: techData,
+                    backgroundColor: '#667eea',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Горизонтальные столбики (круче читаются)
+                maintainAspectRatio: false,
+                scales: { x: { beginAtZero: true } }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
