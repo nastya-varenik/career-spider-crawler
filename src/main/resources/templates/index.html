@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <title>Career Spider 🕷️</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Подключаем DataTables (для крутой таблицы) -->
+    <!-- Подключаем DataTables -->
     <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <style>
         body { background-color: #f0f2f5; padding-top: 30px; padding-bottom: 50px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .card { border: none; border-radius: 15px; overflow: hidden; }
-        .badge-score { font-size: 0.9em; padding: 6px 10px; }
         .header-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 0; margin-bottom: 30px; border-radius: 0 0 20px 20px; margin-top: -30px; }
+        .badge-source { font-size: 0.8em; background-color: #e9ecef; color: #495057; border: 1px solid #dee2e6; }
     </style>
 </head>
 <body>
@@ -40,7 +40,7 @@
         <!-- КНОПКА СКАЧАТЬ -->
         <div class="text-end mb-3">
             <a href="/download" class="btn btn-success btn-lg shadow">
-                📥 Скачать отчет (Excel)
+                📥 Скачать отчет (CSV)
             </a>
         </div>
 
@@ -72,21 +72,21 @@
             </div>
         </div>
 
-        <!-- ГРАФИКИ (2 в ряд) -->
+        <!-- ГРАФИКИ -->
         <div class="row mb-5">
             <div class="col-md-6" th:if="${chartLabels != null and !chartLabels.empty}">
                 <div class="card shadow h-100">
                     <div class="card-header bg-white fw-bold border-0 pt-3">🏢 Топ компаний</div>
                     <div class="card-body">
-                        <canvas id="companyChart"></canvas>
+                        <canvas id="companyChart" height="250"></canvas>
                     </div>
                 </div>
             </div>
             <div class="col-md-6" th:if="${techLabels != null and !techLabels.empty}">
                 <div class="card shadow h-100">
-                    <div class="card-header bg-white fw-bold border-0 pt-3">🛠️ Востребованные технологии</div>
+                    <div class="card-header bg-white fw-bold border-0 pt-3">🛠️ Технологии</div>
                     <div class="card-body">
-                        <canvas id="techChart"></canvas>
+                        <canvas id="techChart" height="250"></canvas>
                     </div>
                 </div>
             </div>
@@ -101,6 +101,7 @@
                         <th class="text-center">Score</th>
                         <th>Вакансия</th>
                         <th>Компания</th>
+                        <th>Источник</th>
                         <th>Зарплата</th>
                         <th>Действие</th>
                     </tr>
@@ -114,6 +115,9 @@
                         </td>
                         <td class="fw-bold" th:text="${v.title}"></td>
                         <td class="text-muted small" th:text="${v.company}"></td>
+                        <td>
+                            <span class="badge badge-source" th:text="${v.source}"></span>
+                        </td>
                         <td th:text="${v.salary}" class="text-nowrap text-primary fw-bold"></td>
                         <td>
                             <a th:href="${v.url}" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3">Open ↗</a>
@@ -133,7 +137,6 @@
 
 <script th:inline="javascript">
     $(document).ready(function() {
-        // ИСПРАВЛЕНИЕ: Добавили пробелы между скобками [ [ ... ] ], чтобы Thymeleaf не ругался
         $('#vacanciesTable').DataTable({
             "language": { "url": "//cdn.datatables.net/plug-ins/1.13.7/i18n/ru.json" },
             "pageLength": 25,
@@ -144,11 +147,10 @@
     // Данные для графиков
     var companyLabels = /*[[${chartLabels}]]*/ [];
     var companyData = /*[[${chartData}]]*/ [];
-
     var techLabels = /*[[${techLabels}]]*/ [];
     var techData = /*[[${techData}]]*/ [];
 
-    // График Компаний (Пончик)
+    // График Компаний
     if (companyLabels && companyLabels.length > 0) {
         new Chart(document.getElementById('companyChart'), {
             type: 'doughnut',
@@ -156,31 +158,28 @@
                 labels: companyLabels,
                 datasets: [{
                     data: companyData,
-                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
-                    hoverOffset: 10
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b']
                 }]
             },
             options: { maintainAspectRatio: false }
         });
     }
 
-    // График Технологий (Столбики)
+    // График Технологий
     if (techLabels && techLabels.length > 0) {
         new Chart(document.getElementById('techChart'), {
             type: 'bar',
             data: {
                 labels: techLabels,
                 datasets: [{
-                    label: 'Частота упоминания',
+                    label: 'Упоминаний',
                     data: techData,
-                    backgroundColor: '#667eea',
-                    borderRadius: 5
+                    backgroundColor: '#667eea'
                 }]
             },
             options: {
-                indexAxis: 'y', // Горизонтальные столбики (круче читаются)
-                maintainAspectRatio: false,
-                scales: { x: { beginAtZero: true } }
+                indexAxis: 'y',
+                maintainAspectRatio: false
             }
         });
     }
